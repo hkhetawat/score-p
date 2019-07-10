@@ -61,6 +61,7 @@
 #include "scorep_events_common.h"
 #include "scorep_runtime_management.h"
 #include "scorep_types.h"
+#include <cuda.h>
 
 
 /**

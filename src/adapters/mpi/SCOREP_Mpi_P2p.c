@@ -63,6 +63,7 @@
 #include <SCOREP_RuntimeManagement.h>
 #include <SCOREP_InMeasurement.h>
 #include <SCOREP_Events.h>
+#include <cuda.h>
 
 /**
  * internal array of statuses
@@ -141,6 +142,10 @@ MPI_Bsend( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, in
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
 
         if ( event_gen_active_for_group )
         {
@@ -223,6 +228,10 @@ MPI_Rsend( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, in
     {
         SCOREP_MPI_EVENT_GEN_OFF();
 
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_RSEND ] );
@@ -304,6 +313,10 @@ MPI_Send( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, int
     {
         SCOREP_MPI_EVENT_GEN_OFF();
 
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_SEND ] );
@@ -384,6 +397,10 @@ MPI_Ssend( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, in
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
 
         if ( event_gen_active_for_group )
         {
@@ -469,6 +486,10 @@ MPI_Recv( void* buf,
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
 
         if ( event_gen_active_for_group )
         {
@@ -710,6 +731,11 @@ MPI_Mrecv( void* buf, int count, MPI_Datatype datatype, MPI_Message* message, MP
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_MRECV ] );
@@ -763,6 +789,11 @@ MPI_Imrecv( void* buf, int count, MPI_Datatype datatype, MPI_Message* message, M
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_IMRECV ] );
@@ -820,6 +851,17 @@ MPI_Sendrecv( SCOREP_MPI_CONST_DECL void* sendbuf, int sendcount, MPI_Datatype s
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        SCOREP_Location* location = SCOREP_Location_GetCurrentCPULocation();
+
+        CUmemorytype memTypeSrc = 1;
+        int res = cuPointerGetAttribute(&memTypeSrc, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)sendbuf);
+
+        CUmemorytype memTypeDst = 1;
+        res = cuPointerGetAttribute(&memTypeDst, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)recvbuf);
+        SCOREP_Location_AddAttribute(location, SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memTypeSrc);
+        SCOREP_Location_AddAttribute(location, SCOREP_Definitions_NewAttribute("MPI_DST_BUF_LOCATION", "Location of destination buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memTypeDst);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_SENDRECV ] );
@@ -901,6 +943,11 @@ MPI_Sendrecv_replace( void* buf, int count, MPI_Datatype datatype, int dest, int
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_SENDRECV_REPLACE ] );
@@ -987,6 +1034,10 @@ MPI_Ibsend( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, i
     {
         reqid = scorep_mpi_get_request_id();
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
 
         if ( event_gen_active_for_group )
         {
@@ -1082,6 +1133,11 @@ MPI_Irsend( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, i
         reqid = scorep_mpi_get_request_id();
         SCOREP_MPI_EVENT_GEN_OFF();
 
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_IRSEND ] );
@@ -1176,6 +1232,11 @@ MPI_Isend( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, in
         reqid = scorep_mpi_get_request_id();
         SCOREP_MPI_EVENT_GEN_OFF();
 
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_ISEND ] );
@@ -1269,6 +1330,11 @@ MPI_Issend( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype, i
     {
         reqid = scorep_mpi_get_request_id();
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
 
         if ( event_gen_active_for_group )
         {
@@ -1365,6 +1431,11 @@ MPI_Irecv( void*        buf,
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
 
         if ( event_gen_active_for_group )
         {
@@ -2362,6 +2433,11 @@ MPI_Bsend_init( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatyp
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_BSEND_INIT ] );
@@ -2424,6 +2500,11 @@ MPI_Rsend_init( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatyp
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_RSEND_INIT ] );
@@ -2486,6 +2567,11 @@ MPI_Send_init( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatype
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_SEND_INIT ] );
@@ -2548,6 +2634,11 @@ MPI_Ssend_init( SCOREP_MPI_CONST_DECL void* buf, int count, MPI_Datatype datatyp
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
         if ( event_gen_active_for_group )
         {
             SCOREP_EnterWrappedRegion( scorep_mpi_regions[ SCOREP_MPI_REGION__MPI_SSEND_INIT ] );
@@ -2614,6 +2705,11 @@ MPI_Recv_init( void*        buf,
     if ( event_gen_active )
     {
         SCOREP_MPI_EVENT_GEN_OFF();
+
+        CUmemorytype memType = 1;
+        int res = cuPointerGetAttribute(&memType, CU_POINTER_ATTRIBUTE_MEMORY_TYPE, (CUdeviceptr)buf);
+        SCOREP_AddAttribute(SCOREP_Definitions_NewAttribute("MPI_SRC_BUF_LOCATION", "Location of source buffer - GPU/CPU", SCOREP_ATTRIBUTE_TYPE_UINT32), &memType);
+
 
         if ( event_gen_active_for_group )
         {
